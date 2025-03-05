@@ -10,56 +10,62 @@ import { createDocument, createId } from "@/services/firebase/firestore";
 import { MessageType } from "@/types";
 import { sanitizeString } from "@/utils/functions";
 import { TSDate, UTCDate } from "@/utils/variables";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import MessageRow from "./components/MessageRow";
 import { signOut } from "firebase/auth";
 import { auth } from "@/services/firebase/config";
 import { orderBy, limit, startAfter } from "firebase/firestore";
 
+const messageLimit = 20 as const;
+
 const Pagination = () => {
   const { Auth, logout } = useAuth();
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState(false);
-  const [messageLimit, setMessageLimit] = useState(20);
+  const [thread, setThread] = useState<MessageType[]>([]);
+  const [afterItem, setAfterItem] = useState<Date | null>(null);
 
   const Messages = useCollectionObserver<MessageType>({
     Collection: "messages",
-    Condition: [orderBy("createdAt", "desc"), limit(messageLimit)],
-    Dependencies: [messageLimit],
+    Condition: [
+      orderBy("createdAt", "desc"),
+      limit(messageLimit),
+      ...(afterItem ? [startAfter(afterItem)] : []),
+    ],
+    Dependencies: [afterItem],
   });
 
-  const handleScroll = useCallback(
-    (e: React.UIEvent<HTMLDivElement>) => {
-      const scrollTop = e.currentTarget.scrollTop;
-      const maxNegativeScroll =
-        e.currentTarget.scrollHeight - e.currentTarget.clientHeight;
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    const maxNegativeScroll =
+      e.currentTarget.scrollHeight - e.currentTarget.clientHeight;
 
-      const isAtTop = Math.abs(scrollTop) === Math.abs(maxNegativeScroll);
+    const isAtTop =
+      Math.floor(Math.abs(scrollTop)) ===
+      Math.floor(Math.abs(maxNegativeScroll));
 
-      const diff = messageLimit - Messages.length;
-
-      if (isAtTop && diff === 0) {
-        setMessageLimit((prevLimit) => prevLimit + 20);
-      }
-    },
-    [messageLimit, Messages]
-  );
+    if (isAtTop) {
+      setAfterItem(thread[thread.length - 1].createdAt);
+    }
+  };
 
   const sendMessage = useCallback(async () => {
     if (!Auth) return;
     const sanitized = sanitizeString(message);
     if (typeof message !== "string" || sanitized.trim() === "")
       return setMessageError(true);
+    const newMessage: MessageType = {
+      authorId: Auth.uid,
+      createdAt: TSDate(),
+      id: createId("messages"),
+      message: sanitized,
+    };
     await createDocument<MessageType>({
       Collection: "messages",
-      Data: {
-        authorId: Auth.uid,
-        createdAt: TSDate(),
-        id: createId("messages"),
-        message: sanitized,
-      },
+      Data: newMessage,
     });
     setMessage("");
+    setThread((prevThread) => [newMessage, ...prevThread]);
   }, [message, Auth]);
 
   const handleSend = useCallback(async () => {
@@ -77,6 +83,12 @@ const Pagination = () => {
     dependencies: [handleSend, Auth],
   });
 
+  useEffect(() => {
+    setThread((oldMessages) => {
+      return [...oldMessages, ...Messages];
+    });
+  }, [Messages]);
+
   return (
     <>
       <div
@@ -91,7 +103,7 @@ const Pagination = () => {
           onScroll={handleScroll}
           className="col-reverse gap-3px h-100p overflow-y-scroll visible-scrollbar"
         >
-          {Messages.map((msg) => (
+          {thread.map((msg) => (
             <MessageRow message={msg} key={msg.id} />
           ))}
         </div>
