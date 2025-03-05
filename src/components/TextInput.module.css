@@ -1,0 +1,30 @@
+.input {
+	width: 100% !important;
+	font-weight: normal !important;
+	padding-bottom: 0px;
+}
+
+.errorInput {
+	outline: 2px solid red !important;
+}
+.errorLabel {
+	color: red;
+	font-family: "MontserratSemiBold";
+}
+
+.disabledInput {
+	width: 100% !important;
+	font-weight: normal !important;
+	cursor: not-allowed;
+}
+
+.topLabel {
+}
+
+.bottomLabel {
+	line-height: 0 !important;
+}
+
+.container {
+	position: relative;
+}

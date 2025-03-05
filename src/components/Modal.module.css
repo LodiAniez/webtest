@@ -1,0 +1,50 @@
+div:has(> div.darkBackground) {
+	/* height: 100vh !important;
+	width: 100vw !important; */
+	/* overflow: hidden; */
+}
+
+.darkBackground {
+	width: 100vw !important;
+	height: 100vh !important;
+	z-index: 99 !important;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	position: fixed;
+	cursor: pointer;
+
+	background-color: rgb(0 0 0 / 0.9);
+	backdrop-filter: blur(10px);
+}
+
+.centered {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 100 !important;
+	max-width: calc(100vw - 10px) !important;
+	max-height: calc(100vh - 100px) !important;
+	min-width: 250px;
+	min-height: 200px !important;
+}
+
+.modal {
+	height: 100%;
+	width: 100%;
+	padding: 20px;
+	background: #fff;
+	opacity: 1;
+	color: #000;
+	position: relative;
+	border-radius: 5px;
+	box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.04);
+}
+
+@media only screen and (max-width: 600px) {
+	.modal {
+		width: calc(100vw - 10px) !important;
+		height: 100%;
+	}
+}
